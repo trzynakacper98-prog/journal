@@ -31,8 +31,6 @@ def resolve_db_path() -> Path:
 def main() -> int:
     os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Material")
     os.environ.setdefault("QT_QUICK_CONTROLS_MATERIAL_VARIANT", "Dense")
-    if sys.platform.startswith("linux"):
-        os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
 
     app = QApplication(sys.argv)
     app.setOrganizationName("KacperTrzyna")
