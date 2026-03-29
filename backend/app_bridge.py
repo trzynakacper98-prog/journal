@@ -132,10 +132,16 @@ class AppBridge(QObject):
 
     @Slot(str)
     def setCurrentPage(self, page_name: str) -> None:
-        if page_name != self._current_page:
-            self._current_page = page_name
+        requested = str(page_name or "journal")
+        page_aliases = {"templates": "journal", "prepare": "journal"}
+        normalized = page_aliases.get(requested, requested)
+        allowed_pages = {"journal", "generator", "settings"}
+        next_page = normalized if normalized in allowed_pages else "journal"
+
+        if next_page != self._current_page:
+            self._current_page = next_page
             self.currentPageChanged.emit()
-            self._set_status(f"Page: {page_name}")
+            self._set_status(f"Page: {next_page}")
 
     @Slot(str)
     def setSearchQuery(self, query: str) -> None:

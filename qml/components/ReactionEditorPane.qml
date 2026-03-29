@@ -257,10 +257,6 @@ Rectangle {
                     onClicked: loadReaction(reaction)
                 }
                 Button {
-                    text: "Use template"
-                    onClicked: appBridge.setCurrentPage("templates")
-                }
-                Button {
                     text: "Duplicate selected"
                     enabled: !!reaction && !!reaction.id
                     onClicked: appBridge.duplicateSelectedReaction()
