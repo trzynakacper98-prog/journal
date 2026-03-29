@@ -1,0 +1,301 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+
+import "components"
+
+ApplicationWindow {
+    id: window
+    width: 1740
+    height: 1020
+    minimumWidth: 1360
+    minimumHeight: 860
+    visible: true
+    title: "Mini ELN — Reaction Journal"
+    color: "#0b1016"
+
+    Material.theme: Material.Dark
+    Material.accent: Material.Teal
+    Material.primary: Material.BlueGrey
+
+    function pageTitle(pageName) {
+        switch (pageName) {
+        case "journal": return "Reaction journal"
+        case "templates": return "Reaction templates"
+        case "prepare": return "Preparation and scaling"
+        case "generator": return "SMILES and molecule tools"
+        case "settings": return "Settings"
+        default: return "Mini ELN"
+        }
+    }
+
+    function pageSubtitle(pageName) {
+        switch (pageName) {
+        case "journal": return "Browse, review, edit, and plan reactions from one workspace."
+        case "templates": return "Reusable setups for recurring chemistry and repeat runs."
+        case "prepare": return "Scale a known reaction or template into a fresh working draft."
+        case "generator": return "Draw, inspect, look up, and reuse structures without leaving the app."
+        case "settings": return "Theme and external-tool preferences will live here later."
+        default: return "Desktop chemistry workspace"
+        }
+    }
+
+    header: Rectangle {
+        color: "#0b1016"
+        implicitHeight: 104
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.leftMargin: 18
+            anchors.rightMargin: 18
+            anchors.topMargin: 14
+            anchors.bottomMargin: 10
+            radius: 24
+            color: "#121a23"
+            border.color: "#223143"
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 22
+                anchors.rightMargin: 22
+                anchors.topMargin: 16
+                anchors.bottomMargin: 16
+                spacing: 18
+
+                ColumnLayout {
+                    Layout.preferredWidth: 360
+                    spacing: 2
+
+                    Label {
+                        text: pageTitle(appBridge.currentPage)
+                        font.pixelSize: 28
+                        font.bold: true
+                    }
+                    Label {
+                        text: pageSubtitle(appBridge.currentPage)
+                        opacity: 0.72
+                        wrapMode: Text.Wrap
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Rectangle {
+                    Layout.preferredWidth: 430
+                    Layout.preferredHeight: 52
+                    radius: 16
+                    color: "#0d141c"
+                    border.color: "#27384b"
+
+                    TextField {
+                        id: searchField
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        placeholderText: "Search by ID, reaction type, product, or tags"
+                        text: appBridge.searchQuery
+                        leftPadding: 16
+                        rightPadding: 16
+                        background: Rectangle {
+                            radius: 12
+                            color: "transparent"
+                            border.width: 0
+                        }
+                        onTextEdited: appBridge.setSearchQuery(text)
+
+                        Connections {
+                            target: appBridge
+                            function onFiltersChanged() {
+                                if (searchField.text !== appBridge.searchQuery)
+                                    searchField.text = appBridge.searchQuery
+                            }
+                        }
+                    }
+                }
+
+                Button {
+                    text: "New reaction"
+                    highlighted: true
+                    onClicked: {
+                        appBridge.startBlankDraftInEditor()
+                        detailsTabs.currentIndex = 1
+                        mainStack.currentIndex = 0
+                        appBridge.setCurrentPage("journal")
+                    }
+                }
+
+                Button {
+                    text: "Clear filters"
+                    enabled: !!appBridge.searchQuery || !!appBridge.activeTag || !!appBridge.reactionTypeFilter || !!appBridge.templateFilter
+                    onClicked: appBridge.clearFilters()
+                }
+            }
+        }
+    }
+
+    footer: Rectangle {
+        color: "#0b1016"
+        implicitHeight: 46
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.leftMargin: 18
+            anchors.rightMargin: 18
+            anchors.topMargin: 0
+            anchors.bottomMargin: 12
+            radius: 18
+            color: "#121a23"
+            border.color: "#223143"
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                spacing: 16
+
+                Label {
+                    text: appBridge.statusText
+                    opacity: 0.82
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Label {
+                    text: appBridge.capabilities.rdkitStatus || "RDKit status unknown"
+                    opacity: 0.68
+                }
+                Label {
+                    text: appBridge.capabilities.rdeditorStatus || "rdEditor status unknown"
+                    opacity: 0.68
+                }
+                Label {
+                    text: appBridge.capabilities.pubchemStatus || "PubChem status unknown"
+                    opacity: 0.68
+                }
+                Label {
+                    text: "Total reactions: " + (appBridge.stats.count ?? 0) + " • Templates: " + (appBridge.stats.templateCount ?? 0)
+                    opacity: 0.82
+                    font.bold: true
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: appBridge
+        function onJournalTabRequested(index) {
+            detailsTabs.currentIndex = index
+            mainStack.currentIndex = 0
+        }
+    }
+
+    RowLayout {
+        anchors.fill: parent
+        anchors.leftMargin: 18
+        anchors.rightMargin: 18
+        anchors.bottomMargin: 12
+        spacing: 16
+
+        SideNav {
+            Layout.preferredWidth: 272
+            Layout.fillHeight: true
+            currentPage: appBridge.currentPage
+            onPageSelected: appBridge.setCurrentPage(pageName)
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            radius: 28
+            color: "#0f151d"
+            border.color: "#1e2b3a"
+
+            StackLayout {
+                id: mainStack
+                anchors.fill: parent
+                anchors.margins: 10
+                currentIndex: {
+                    switch (appBridge.currentPage) {
+                    case "journal": return 0
+                    case "templates": return 1
+                    case "prepare": return 2
+                    case "generator": return 3
+                    case "settings": return 4
+                    default: return 0
+                    }
+                }
+
+                SplitView {
+                    id: journalPage
+                    anchors.fill: parent
+                    orientation: Qt.Horizontal
+
+                    ReactionListPane {
+                        SplitView.preferredWidth: 580
+                        SplitView.minimumWidth: 430
+                        model: reactionModel
+                        currentRow: appBridge.selectedRow
+                        onReactionActivated: function(row) { appBridge.selectReaction(row) }
+                    }
+
+                    Rectangle {
+                        SplitView.fillWidth: true
+                        radius: 22
+                        color: "#0c1218"
+                        border.color: "#1a2632"
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            spacing: 12
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                radius: 18
+                                color: "#121a23"
+                                border.color: "#223143"
+                                implicitHeight: 58
+
+                                TabBar {
+                                    id: detailsTabs
+                                    anchors.fill: parent
+                                    anchors.margins: 6
+                                    spacing: 8
+                                    background: Item {}
+
+                                    TabButton { text: "Preview" }
+                                    TabButton { text: "Edit" }
+                                }
+                            }
+
+                            StackLayout {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                currentIndex: detailsTabs.currentIndex
+
+                                ReactionDetailsPane {
+                                    reaction: appBridge.selectedReaction
+                                }
+
+                                ReactionEditorPane {
+                                    reaction: appBridge.selectedReaction
+                                }
+                            }
+                        }
+                    }
+                }
+
+                TemplatePage { }
+
+                PreparationPage { }
+
+                SmilesGeneratorPane { }
+
+                PlaceholderPage {
+                    title: "Settings"
+                    subtitle: "Theme preferences, external tool paths, and optional defaults will live here later."
+                }
+            }
+        }
+    }
+}
