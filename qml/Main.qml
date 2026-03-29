@@ -7,10 +7,10 @@ import "components"
 
 ApplicationWindow {
     id: window
-    width: 1740
-    height: 1020
-    minimumWidth: 1360
-    minimumHeight: 860
+    width: 1680
+    height: 980
+    minimumWidth: 1280
+    minimumHeight: 820
     visible: true
     title: "Mini ELN — Reaction Journal"
     color: "#0b1016"
@@ -22,8 +22,6 @@ ApplicationWindow {
     function pageTitle(pageName) {
         switch (pageName) {
         case "journal": return "Reaction journal"
-        case "templates": return "Reaction templates"
-        case "prepare": return "Preparation and scaling"
         case "generator": return "SMILES and molecule tools"
         case "settings": return "Settings"
         default: return "Mini ELN"
@@ -32,9 +30,7 @@ ApplicationWindow {
 
     function pageSubtitle(pageName) {
         switch (pageName) {
-        case "journal": return "Browse, review, edit, and plan reactions from one workspace."
-        case "templates": return "Reusable setups for recurring chemistry and repeat runs."
-        case "prepare": return "Scale a known reaction or template into a fresh working draft."
+        case "journal": return "Browse, review, and edit reactions in one clear workspace."
         case "generator": return "Draw, inspect, look up, and reuse structures without leaving the app."
         case "settings": return "Theme and external-tool preferences will live here later."
         default: return "Desktop chemistry workspace"
@@ -64,8 +60,8 @@ ApplicationWindow {
                 spacing: 18
 
                 ColumnLayout {
-                    Layout.preferredWidth: 360
-                    spacing: 2
+                    Layout.preferredWidth: 420
+                    spacing: 4
 
                     Label {
                         text: pageTitle(appBridge.currentPage)
@@ -74,7 +70,7 @@ ApplicationWindow {
                     }
                     Label {
                         text: pageSubtitle(appBridge.currentPage)
-                        opacity: 0.72
+                        opacity: 0.82
                         wrapMode: Text.Wrap
                     }
                 }
@@ -92,7 +88,7 @@ ApplicationWindow {
                         id: searchField
                         anchors.fill: parent
                         anchors.margins: 4
-                        placeholderText: "Search by ID, reaction type, product, or tags"
+                        placeholderText: "Search: ID, type, product, or tags"
                         text: appBridge.searchQuery
                         leftPadding: 16
                         rightPadding: 16
@@ -173,7 +169,7 @@ ApplicationWindow {
                     opacity: 0.68
                 }
                 Label {
-                    text: "Total reactions: " + (appBridge.stats.count ?? 0) + " • Templates: " + (appBridge.stats.templateCount ?? 0)
+                    text: "Total reactions: " + (appBridge.stats.count ?? 0)
                     opacity: 0.82
                     font.bold: true
                 }
@@ -217,10 +213,8 @@ ApplicationWindow {
                 currentIndex: {
                     switch (appBridge.currentPage) {
                     case "journal": return 0
-                    case "templates": return 1
-                    case "prepare": return 2
-                    case "generator": return 3
-                    case "settings": return 4
+                    case "generator": return 1
+                    case "settings": return 2
                     default: return 0
                     }
                 }
@@ -284,10 +278,6 @@ ApplicationWindow {
                         }
                     }
                 }
-
-                TemplatePage { }
-
-                PreparationPage { }
 
                 SmilesGeneratorPane { }
 
