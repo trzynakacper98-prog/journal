@@ -18,6 +18,8 @@ ApplicationWindow {
     Material.theme: Material.Dark
     Material.accent: Material.Teal
     Material.primary: Material.BlueGrey
+    property bool previewUnlocked: false
+    property bool newReactionMode: false
 
     function pageTitle(pageName) {
         switch (pageName) {
@@ -114,7 +116,8 @@ ApplicationWindow {
                     highlighted: true
                     onClicked: {
                         appBridge.startBlankDraftInEditor()
-                        detailsTabs.currentIndex = 1
+                        newReactionMode = true
+                        previewUnlocked = false
                         mainStack.currentIndex = 0
                         appBridge.setCurrentPage("journal")
                     }
@@ -180,6 +183,8 @@ ApplicationWindow {
     Connections {
         target: appBridge
         function onJournalTabRequested(index) {
+            newReactionMode = false
+            previewUnlocked = true
             detailsTabs.currentIndex = index
             mainStack.currentIndex = 0
         }
@@ -229,7 +234,12 @@ ApplicationWindow {
                         SplitView.minimumWidth: 430
                         model: reactionModel
                         currentRow: appBridge.selectedRow
-                        onReactionActivated: function(row) { appBridge.selectReaction(row) }
+                        onReactionActivated: function(row) {
+                            appBridge.selectReaction(row)
+                            newReactionMode = false
+                            previewUnlocked = true
+                            detailsTabs.currentIndex = 0
+                        }
                     }
 
                     Rectangle {
@@ -248,31 +258,95 @@ ApplicationWindow {
                                 radius: 18
                                 color: "#121a23"
                                 border.color: "#223143"
-                                implicitHeight: 58
+                                implicitHeight: 62
 
-                                TabBar {
-                                    id: detailsTabs
+                                RowLayout {
                                     anchors.fill: parent
-                                    anchors.margins: 6
-                                    spacing: 8
-                                    background: Item {}
+                                    anchors.margins: 10
+                                    spacing: 10
 
-                                    TabButton { text: "Preview" }
-                                    TabButton { text: "Edit" }
+                                    Label {
+                                        text: newReactionMode ? "New reaction editor" : "Reaction library details"
+                                        font.bold: true
+                                        opacity: 0.9
+                                    }
+
+                                    Item { Layout.fillWidth: true }
+
+                                    Button {
+                                        text: "Library view"
+                                        enabled: newReactionMode
+                                        onClicked: newReactionMode = false
+                                    }
+
+                                    Button {
+                                        text: "New reaction window"
+                                        highlighted: true
+                                        onClicked: {
+                                            appBridge.startBlankDraftInEditor()
+                                            newReactionMode = true
+                                            previewUnlocked = false
+                                        }
+                                    }
                                 }
                             }
 
                             StackLayout {
+                                id: editorModeStack
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                currentIndex: detailsTabs.currentIndex
-
-                                ReactionDetailsPane {
-                                    reaction: appBridge.selectedReaction
-                                }
+                                currentIndex: newReactionMode ? 0 : 1
 
                                 ReactionEditorPane {
-                                    reaction: appBridge.selectedReaction
+                                    reaction: appBridge.editorDraft
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    spacing: 10
+
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        radius: 16
+                                        color: "#121a23"
+                                        border.color: "#223143"
+                                        implicitHeight: 58
+
+                                        TabBar {
+                                            id: detailsTabs
+                                            anchors.fill: parent
+                                            anchors.margins: 6
+                                            spacing: 8
+                                            background: Item {}
+                                            visible: previewUnlocked && !!appBridge.selectedReaction && !!appBridge.selectedReaction.id
+
+                                            TabButton { text: "Preview" }
+                                            TabButton { text: "Edit" }
+                                        }
+
+                                        Label {
+                                            anchors.centerIn: parent
+                                            visible: !detailsTabs.visible
+                                            text: "Select a reaction from the library to open preview."
+                                            opacity: 0.74
+                                        }
+                                    }
+
+                                    StackLayout {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        visible: detailsTabs.visible
+                                        currentIndex: detailsTabs.currentIndex
+
+                                        ReactionDetailsPane {
+                                            reaction: appBridge.selectedReaction
+                                        }
+
+                                        ReactionEditorPane {
+                                            reaction: appBridge.selectedReaction
+                                        }
+                                    }
                                 }
                             }
                         }
