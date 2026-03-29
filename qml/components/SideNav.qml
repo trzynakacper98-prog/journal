@@ -53,10 +53,8 @@ Rectangle {
 
         Repeater {
             model: [
-                { key: "journal", label: "Journal", hint: "Browse and edit reactions" },
-                { key: "templates", label: "Templates", hint: "Reusable reaction setups" },
-                { key: "prepare", label: "Preparation", hint: "Scale and prepare runs" },
-                { key: "generator", label: "SMILES / Molecules", hint: "Draw and inspect structures" },
+                { key: "journal", label: "Journal", hint: "Browse, filter, and edit reactions" },
+                { key: "generator", label: "SMILES / Molecules", hint: "Draw, verify, and inspect structures" },
                 { key: "settings", label: "Settings", hint: "Preferences and tooling" }
             ]
 
@@ -67,7 +65,7 @@ Rectangle {
                 color: root.currentPage === modelData.key ? "#173247" : (navMouse.containsMouse ? "#16212c" : "#101820")
                 border.color: root.currentPage === modelData.key ? "#55c1ff" : "#223142"
                 border.width: root.currentPage === modelData.key ? 2 : 1
-                implicitHeight: 66
+                implicitHeight: 70
 
                 Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -133,7 +131,7 @@ Rectangle {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     opacity: 0.78
-                    text: "QML shell, reaction browser, editor, templates, scaling, search, and PubChem are already wired in. This pass focuses on a cleaner hierarchy, stronger visual consistency, and safer defaults."
+                    text: "Reaction journal, editor, search, and molecule tools are wired in. This layout focuses on clear hierarchy and readability for everyday lab documentation."
                 }
             }
         }
