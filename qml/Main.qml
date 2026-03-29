@@ -18,8 +18,7 @@ ApplicationWindow {
     Material.theme: Material.Dark
     Material.accent: Material.Teal
     Material.primary: Material.BlueGrey
-    property bool previewUnlocked: false
-    property bool newReactionMode: false
+    property string journalMode: "empty" // empty, preview, editorNew, editorSelected
 
     function pageTitle(pageName) {
         switch (pageName) {
@@ -116,8 +115,7 @@ ApplicationWindow {
                     highlighted: true
                     onClicked: {
                         appBridge.startBlankDraftInEditor()
-                        newReactionMode = true
-                        previewUnlocked = false
+                        journalMode = "editorNew"
                         mainStack.currentIndex = 0
                         appBridge.setCurrentPage("journal")
                     }
@@ -183,9 +181,7 @@ ApplicationWindow {
     Connections {
         target: appBridge
         function onJournalTabRequested(index) {
-            newReactionMode = false
-            previewUnlocked = true
-            detailsTabs.currentIndex = index
+            journalMode = index === 1 ? "editorSelected" : "preview"
             mainStack.currentIndex = 0
         }
     }
@@ -236,9 +232,7 @@ ApplicationWindow {
                         currentRow: appBridge.selectedRow
                         onReactionActivated: function(row) {
                             appBridge.selectReaction(row)
-                            newReactionMode = false
-                            previewUnlocked = true
-                            detailsTabs.currentIndex = 0
+                            journalMode = "preview"
                         }
                     }
 
@@ -266,7 +260,14 @@ ApplicationWindow {
                                     spacing: 10
 
                                     Label {
-                                        text: newReactionMode ? "New reaction editor" : "Reaction library details"
+                                        text: {
+                                            switch (journalMode) {
+                                            case "editorNew": return "New reaction editor"
+                                            case "editorSelected": return "Edit selected reaction"
+                                            case "preview": return "Reaction preview"
+                                            default: return "Reaction library details"
+                                            }
+                                        }
                                         font.bold: true
                                         opacity: 0.9
                                     }
@@ -275,8 +276,14 @@ ApplicationWindow {
 
                                     Button {
                                         text: "Library view"
-                                        enabled: newReactionMode
-                                        onClicked: newReactionMode = false
+                                        enabled: journalMode !== "empty"
+                                        onClicked: journalMode = appBridge.selectedReaction && appBridge.selectedReaction.id ? "preview" : "empty"
+                                    }
+
+                                    Button {
+                                        text: "Edit selected"
+                                        enabled: !!appBridge.selectedReaction && !!appBridge.selectedReaction.id
+                                        onClicked: journalMode = "editorSelected"
                                     }
 
                                     Button {
@@ -284,69 +291,23 @@ ApplicationWindow {
                                         highlighted: true
                                         onClicked: {
                                             appBridge.startBlankDraftInEditor()
-                                            newReactionMode = true
-                                            previewUnlocked = false
+                                            journalMode = "editorNew"
                                         }
                                     }
                                 }
                             }
 
-                            StackLayout {
-                                id: editorModeStack
+                            Loader {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                currentIndex: newReactionMode ? 0 : 1
-
-                                ReactionEditorPane {
-                                    reaction: appBridge.editorDraft
-                                }
-
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    spacing: 10
-
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        radius: 16
-                                        color: "#121a23"
-                                        border.color: "#223143"
-                                        implicitHeight: 58
-
-                                        TabBar {
-                                            id: detailsTabs
-                                            anchors.fill: parent
-                                            anchors.margins: 6
-                                            spacing: 8
-                                            background: Item {}
-                                            visible: previewUnlocked && !!appBridge.selectedReaction && !!appBridge.selectedReaction.id
-
-                                            TabButton { text: "Preview" }
-                                            TabButton { text: "Edit" }
-                                        }
-
-                                        Label {
-                                            anchors.centerIn: parent
-                                            visible: !detailsTabs.visible
-                                            text: "Select a reaction from the library to open preview."
-                                            opacity: 0.74
-                                        }
-                                    }
-
-                                    StackLayout {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                        visible: detailsTabs.visible
-                                        currentIndex: detailsTabs.currentIndex
-
-                                        ReactionDetailsPane {
-                                            reaction: appBridge.selectedReaction
-                                        }
-
-                                        ReactionEditorPane {
-                                            reaction: appBridge.selectedReaction
-                                        }
-                                    }
+                                sourceComponent: {
+                                    if (journalMode === "editorNew")
+                                        return newReactionEditor
+                                    if (journalMode === "editorSelected" && !!appBridge.selectedReaction && !!appBridge.selectedReaction.id)
+                                        return selectedReactionEditor
+                                    if (journalMode === "preview" && !!appBridge.selectedReaction && !!appBridge.selectedReaction.id)
+                                        return selectedReactionPreview
+                                    return emptyLibraryState
                                 }
                             }
                         }
@@ -360,6 +321,53 @@ ApplicationWindow {
                     subtitle: "Theme preferences, external tool paths, and optional defaults will live here later."
                 }
             }
+        }
+    }
+
+    Component {
+        id: emptyLibraryState
+        Rectangle {
+            radius: 18
+            color: "#0e141b"
+            border.color: "#1f2d3b"
+
+            ColumnLayout {
+                anchors.centerIn: parent
+                spacing: 10
+
+                Label {
+                    text: "Select a reaction from Reaction Library"
+                    font.pixelSize: 21
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                }
+                Label {
+                    text: "Preview appears only after selecting an item on the left."
+                    opacity: 0.72
+                    horizontalAlignment: Text.AlignHCenter
+                }
+            }
+        }
+    }
+
+    Component {
+        id: selectedReactionPreview
+        ReactionDetailsPane {
+            reaction: appBridge.selectedReaction
+        }
+    }
+
+    Component {
+        id: selectedReactionEditor
+        ReactionEditorPane {
+            reaction: appBridge.selectedReaction
+        }
+    }
+
+    Component {
+        id: newReactionEditor
+        ReactionEditorPane {
+            reaction: appBridge.editorDraft
         }
     }
 }
